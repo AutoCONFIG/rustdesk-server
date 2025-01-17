@@ -1,0 +1,26 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=10
+
+USE_PROCD=1
+NAME="rustdesk"
+
+WORKDIR="/etc/rustdesk"
+
+start_service() {
+    if ! mkdir -p "$WORKDIR"; then
+        logger -p daemon.err -t "$NAME" "Failed to create working directory: $WORKDIR"
+        return 1
+    fi
+
+    procd_open_instance "$NAME.server"
+    procd_set_param command sh -c "cd $WORKDIR && /usr/bin/hbbs"
+    procd_set_param respawn
+    procd_close_instance
+
+    procd_open_instance "$NAME.relay"
+    procd_set_param command sh -c "cd $WORKDIR && /usr/bin/hbbr"
+    procd_set_param respawn
+    procd_close_instance
+}
