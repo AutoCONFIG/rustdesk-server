@@ -23,15 +23,15 @@ include $(INCLUDE_DIR)/package.mk
 include $(TOPDIR)/feeds/packages/lang/rust/rust-package.mk
 
 define Package/rustdesk-server
-	SECTION:=net
-	CATEGORY:=Network
-	TITLE:=RustDesk Server Program
-	DEPENDS:=@(aarch64||arm||x86_64) @(!arm||TARGET_bcm53xx||HAS_FPU)
-	URL:=https://rustdesk.com/server
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=RustDesk Server Program
+  DEPENDS:=@(aarch64||arm||x86_64) @(!arm||TARGET_bcm53xx||HAS_FPU)
+  URL:=https://rustdesk.com/server
 endef
 
 define Package/rustdesk-server/description
-	Self-host your own RustDesk server, it is free and open source.
+  Self-host your own RustDesk server, it is free and open source.
 endef
 
 define Package/rustdesk-server/install
