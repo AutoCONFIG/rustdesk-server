@@ -1,4 +1,5 @@
 #!/bin/sh /etc/rc.common
+. /usr/share/libubox/jshn.sh
 
 USE_PROCD=1
 START=95
@@ -8,159 +9,183 @@ CONF="rustdesk-server"
 
 # 合并连续的端口为范围
 combine_ports() {
-	local ports=($@)
-	local result=""
-	local start=""
-	local end=""
+    local ports=""
+    
+    # 将范围展开为实际的端口列表
+    for item in "$@"; do
+        if echo "$item" | grep -qE '^[0-9]+-[0-9]+$'; then
+            local start end
+            start=$(echo "$item" | cut -d'-' -f1)
+            end=$(echo "$item" | cut -d'-' -f2)
+            for port in $(seq "$start" "$end"); do
+                ports="$ports $port"
+            done
+        else
+            ports="$ports $item"
+        fi
+    done
 
-	# 遍历所有端口，找出连续的端口范围
-	for port in "${ports[@]}"; do
-		if [ -z "$start" ]; then
-			# 如果 start 为空，初始化为当前端口
-			start=$port
-			end=$port
-		elif [ $((end + 1)) -eq $port ]; then
-			# 如果当前端口是连续的，更新 end
-			end=$port
-		else
-			# 如果当前端口不连续，记录之前的连续范围并重置 start 和 end
-			if [ "$start" -eq "$end" ]; then
-				result="$result$start "
-			else
-				result="$result$start-$end "
-			fi
-			start=$port
-			end=$port
-		fi
-	done
+    # 排序并移除重复，使用临时文件来处理
+    ports=$(echo "$ports" | tr ' ' '\n' | sort -n | uniq | tr '\n' ' ')
 
-	# 最后处理剩余的连续端口范围
-	if [ "$start" -eq "$end" ]; then
-		result="$result$start"
-	else
-		result="$result$start-$end"
-	fi
+    # 合并连续端口为范围
+    local result=""
+    local start=""
+    local end=""
 
-	echo $result
+    for port in $ports; do
+        if [ -z "$start" ]; then
+            start=$port
+            end=$port
+        elif [ $((end + 1)) -eq "$port" ]; then
+            end=$port
+        else
+            if [ "$start" -eq "$end" ]; then
+                result="$result$start "
+            else
+                result="$result$start-$end "
+            fi
+            start=$port
+            end=$port
+        fi
+    done
+
+    # 处理最后一段范围
+    if [ "$start" -eq "$end" ]; then
+        result="$result$start"
+    else
+        result="$result$start-$end"
+    fi
+
+    echo "$result"
+}
+
+# Retrieve HBBS ports
+get_hbbs_ports() {
+    local hbbs_ports=""
+    if [ "$1" -eq "0" ]; then
+        hbbs_ports="$(( $2 - 1 ))-$2"
+    else
+        hbbs_ports="$(( $2 - 1 ))-$2 $(( $2 + 2 ))"
+    fi
+    echo "$hbbs_ports"
+}
+
+# Retrieve HBBR ports
+get_hbbr_ports() {
+    local hbbr_ports=""
+    if [ "$1" -eq "0" ]; then
+        hbbr_ports="$2"
+    else
+        hbbr_ports="$2 $(( $2 + 2 ))"
+    fi
+    echo "$hbbr_ports"
 }
 
 load_config() {
+	local HBBS_TCP_PORTS=""
+    local HBBR_TCP_PORTS=""
+	TCP_PORTS=""
+	UDP_PORTS=""
+
 	config_load "$CONF"
 
-	config_get_bool _enabled "rustdesk" "enabled" "0"
-	[ "$_enabled" -eq "1" ] || return 1
+	config_get_bool _enabled "global" "enabled"
+	config_get _workdir "global" "workdir"
+	config_get_bool _auto_fw "global" "auto_fw"
+	config_get_bool _web_client "global" "web_client"
+	config_get_bool _hbbr_enabled "hbbr" "enabled"
+	config_get _hbbr_port "hbbr" "port"
+	config_get_bool _hbbs_enabled "hbbs" "enabled"
+	config_get _hbbs_port "hbbs" "port"
 
-	config_get _workdir "rustdesk" "workdir"
-	config_get_bool _auto_fw "rustdesk" "auto_fw" "1"
-	config_get_bool _web_client "rustdesk" "web_client" "0"
+    [ "$_hbbs_enabled" -eq "0" ] || {
+		HBBS_TCP_PORTS=$(get_hbbs_ports "$_web_client" "$_hbbs_port")
+		UDP_PORTS="$_hbbs_port"  # 21116
+	}
+    [ "$_hbbr_enabled" -eq "0" ] || HBBR_TCP_PORTS=$(get_hbbr_ports "$_web_client" "$_hbbr_port")
 
-	config_get _hbbs_enabled "hbbs" "enabled" "1"
-	config_get _hbbs_port "hbbs" "port" "21116"
-	config_get _hbbr_enabled "hbbr" "enabled" "1"
-	config_get _hbbr_port "hbbr" "port" "21117"
-
-	if [ "$_web_client" -eq "0" ]; then
-		HBBS_TCP_PORTS="$((_hbbs_port - 1))-$_hbbs_port"  # 21115-21116
-		HBBR_TCP_PORTS="$_hbbr_port"  # 21117
-	else
-		HBBS_TCP_PORTS="$((_hbbs_port - 1))-$_hbbs_port $((_hbbs_port + 2))"  # 21115-21116 21118
-		HBBR_TCP_PORTS="$_hbbr_port $((_hbbs_port + 2))"  # 21117 21119
-	fi
-
-	# 将所有的 TCP 端口合并并优化为范围形式
+	printf "HBBS_TCP_PORTS: %s\nHBBR_TCP_PORTS: %s\n" "$HBBS_TCP_PORTS" "$HBBR_TCP_PORTS"
 	TCP_PORTS=$(combine_ports $HBBS_TCP_PORTS $HBBR_TCP_PORTS)
-	UDP_PORTS="$_hbbs_port"  # 21116
+	printf "TCP Ports: %s\nUDP Ports: %s\n" "$TCP_PORTS" "$UDP_PORTS"
 }
 
 check_firewall_rule_exists() {
-  local rule_name=$1
-  local port_range=$2
-  local cnt=0
-  while [ -n "$(uci -q get firewall.@rule[$cnt].name)" ]; do
-    local name=$(uci -q get firewall.@rule[$cnt].name)
-    local port=$(uci -q get firewall.@rule[$cnt].dest_port)
-    if [ "$name" = "$rule_name" ] && [ "$port" = "$port_range" ]; then
-      return 0
-    fi
-    cnt=$((cnt + 1))
-  done
-  return 1
+	local rule_name=$1
+	local port_range=$2
+	local cnt=0
+	while [ -n "$(uci -q get firewall.@rule[$cnt].name)" ]; do
+		local name=$(uci -q get firewall.@rule[$cnt].name)
+		local port=$(uci -q get firewall.@rule[$cnt].dest_port)
+		printf "Checking rule %s with port %s\n" "$name" "$port"
+		if [ "$name" = "$rule_name" ] && [ "$port" = "$port_range" ]; then
+			printf "Rule exists: %s\n" "$rule_name"
+			return 0
+		fi
+		cnt=$((cnt + 1))
+	done
+	return 1
 }
 
 setup_firewall() {
-	if ! check_firewall_rule_exists "rustdesk-server-tcp" "$TCP_PORTS"; then
-		procd_open_data
-		json_add_array firewall
-			json_add_object ""
-			json_add_string type rule
-			json_add_string name "rustdesk-server-tcp"
-			json_add_string proto tcp
-			json_add_string src "wan"
-			json_add_string dest_port "$TCP_PORTS"
-			json_add_string target ACCEPT
-			json_close_object
-		json_close_array
-		procd_close_data
+	procd_open_data
+	json_add_array firewall
+	if (! [ "$_hbbs_enabled" -eq "0" ] || ! [ "$_hbbr_enabled" -eq "0" ]) && ! check_firewall_rule_exists "rustdesk-server-tcp" "$TCP_PORTS"; then
+		printf "Adding firewall rule for TCP ports: %s\n" "$TCP_PORTS"
+		json_add_object ""
+		json_add_string type rule
+		json_add_string name "Allow-rustdesk-server-tcp"
+		json_add_string proto tcp
+		json_add_string src "wan"
+		json_add_string dest_port "$TCP_PORTS"
+		json_add_string target ACCEPT
+		json_close_object
+	fi
 
-	if ! check_firewall_rule_exists "rustdesk-server-udp" "$UDP_PORTS"; then
-		procd_open_data
-		json_add_array firewall
-			json_add_object ""
-			json_add_string type rule
-			json_add_string name "rustdesk-server-tcp"
-			json_add_string proto udp
-			json_add_string src "wan"
-			json_add_string dest_port "$UDP_PORTS"
-			json_add_string target ACCEPT
-			json_close_object
-		json_close_array
-		procd_close_data
+	if ! [ "$_hbbs_enabled" -eq "0" ] && ! check_firewall_rule_exists "rustdesk-server-udp" "$UDP_PORTS"; then
+		printf "Adding firewall rule for UDP ports: %s\n" "$UDP_PORTS"
+		json_add_object ""
+		json_add_string type rule
+		json_add_string name "Allow-rustdesk-server-udp"
+		json_add_string proto udp
+		json_add_string src "wan"
+		json_add_string dest_port "$UDP_PORTS"
+		json_add_string target ACCEPT
+		json_close_object
+	fi
+	json_close_array
+	json_dump # 调试json输出
+	procd_close_data
 }
 
 start_service() {
+	printf "Starting service...\n"
 	load_config
 
-	# 启动服务之前检查是否启用
-	[ "$_enabled" -eq "1" ] || return 1
+	[ "$_enabled" -eq "0" ] || { [ "$_hbbr_enabled" -eq "0" ] && [ "$_hbbs_enabled" -eq "0" ] && return 1; }
+	[ "$_auto_fw" -eq "0" ] || setup_firewall
 
-	# 确保工作目录存在
 	if ! mkdir -p "$_workdir"; then
-		logger -p daemon.err -t "$CONF" "Failed to create working directory: $_workdir"
+		printf "Failed to create working directory: %s\n" "$_workdir"
 		return 1
 	fi
 
-	# 设置防火墙
-	[ "$_auto_fw" -eq "1" ] || setup_firewall
-
-	if [ "$_hbbs_enabled" -eq "1" ]; then
-		procd_open_instance "$CONF.server"
-		procd_set_param command sh -c "cd $_workdir && /usr/bin/hbbs"
+	[ "$_hbbs_enabled" -eq "0" ] || {
+		procd_open_instance "hbbs.server"
+		procd_set_param command sh -c "cd $_workdir && /usr/bin/hbbs -p "${_hbbs_port}""
 		procd_set_param respawn
 		procd_close_instance
-		logger -p daemon.info -t "$CONF" "Started hbbs on ports $HBBS_TCP_PORTS (TCP) and $HBBS_UDP_PORTS (UDP)"
-	fi
+	}
 
-	if [ "$_hbbr_enabled" -eq "1" ]; then
-		procd_open_instance "$CONF.relay"
-		procd_set_param command sh -c "cd $_workdir && /usr/bin/hbbr"
+	[ "$_hbbr_enabled" -eq "0" ] || {
+		procd_open_instance "hbbr.relay"
+		procd_set_param command sh -c "cd $_workdir && /usr/bin/hbbr -p "${_hbbr_port}""
 		procd_set_param respawn
 		procd_close_instance
-		logger -p daemon.info -t "$CONF" "Started hbbr on ports $HBBR_TCP_PORTS"
-	fi
+	}
+	
 }
 
-stop_service() {
-	logger -p daemon.info -t "$CONF" "Stopping RustDesk services."
-
-}
-
-reload_service() {
-	logger -p daemon.info -t "$CONF" "Reloading RustDesk services."
-	stop_service
-	start_service
-}
-
-# 添加重启触发器
 service_started() {
 	procd_set_config_changed firewall
 }

@@ -34,6 +34,10 @@ define Package/rustdesk-server/description
   Self-host your own RustDesk server, it is free and open source.
 endef
 
+define Package/rustdesk-server/conffiles
+/etc/config/rustdesk-server
+endef
+
 define Package/rustdesk-server/install
 	$(INSTALL_DIR) $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/{hbbr,hbbs} $(1)/usr/bin/
