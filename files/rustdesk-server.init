@@ -21,22 +21,26 @@ start_service() {
 
 	[ "$hbbr_enabled" -eq "1" ] || [ "$hbbs_enabled" -eq "1" ] || return 1
 
-	mkdir -p "$WORKDIR" || {
+	if [ ! -d "$WORKDIR" ] && ! mkdir -p "$WORKDIR"; then
 		logger -p daemon.error -t "rustdesk-server" "Failed to create working directory: $WORKDIR"
 		return 1
-	}
+	fi
+	chown -R rustdesk-server:rustdesk-server "$WORKDIR"
 
 	if [ "$hbbr_enabled" -eq "1" ]; then
-		if [ "$web_client" -eq "0" ]; then
-			hbbr_tcp_ports="$hbbr_port"
-		else
-			hbbr_tcp_ports="$hbbr_port $(( hbbr_port + 2 ))"
-		fi
-
 		procd_open_instance "hbbr"
 		procd_set_param command sh -c "cd $WORKDIR && /usr/bin/hbbr -p ${hbbr_port}"
 		procd_set_param respawn
+		procd_set_param user rustdesk-server
+		procd_set_param group rustdesk-server
+
 		if [ "$auto_fw" -eq "1" ]; then
+			if [ "$web_client" -eq "0" ]; then
+				hbbr_tcp_ports="$hbbr_port"
+			else
+				hbbr_tcp_ports="$hbbr_port $(( hbbr_port + 2 ))"
+			fi
+
 			procd_open_data
 			json_add_array firewall
 				json_add_object ""
@@ -54,17 +58,20 @@ start_service() {
 	fi
 
 	if [ "$hbbs_enabled" -eq "1" ]; then
-		if [ "$web_client" -eq "0" ]; then
-			hbbs_tcp_ports="$(( hbbs_port - 1 )) $hbbs_port"
-		else
-			hbbs_tcp_ports="$(( hbbs_port - 1 )) $hbbs_port $(( hbbs_port + 2 ))"
-		fi
-		hbbs_udp_ports="$hbbs_port"
-
 		procd_open_instance "hbbs"
 		procd_set_param command sh -c "cd $WORKDIR && /usr/bin/hbbs -p ${hbbs_port}"
 		procd_set_param respawn
+		procd_set_param user rustdesk-server
+		procd_set_param group rustdesk-server
+
 		if [ "$auto_fw" -eq "1" ]; then
+			if [ "$web_client" -eq "0" ]; then
+				hbbs_tcp_ports="$(( hbbs_port - 1 )) $hbbs_port"
+			else
+				hbbs_tcp_ports="$(( hbbs_port - 1 )) $hbbs_port $(( hbbs_port + 2 ))"
+			fi
+			hbbs_udp_ports="$hbbs_port"
+
 			procd_open_data
 			json_add_array firewall
 				json_add_object ""

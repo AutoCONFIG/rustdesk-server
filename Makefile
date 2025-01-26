@@ -28,6 +28,7 @@ define Package/rustdesk-server
   TITLE:=RustDesk Server Program
   DEPENDS:=@(aarch64||arm||x86_64) @(!arm||TARGET_bcm53xx||HAS_FPU)
   URL:=https://rustdesk.com/server
+  USERID:=rustdesk-server:rustdesk-server
 endef
 
 define Package/rustdesk-server/description
@@ -42,8 +43,9 @@ endef
 define Package/rustdesk-server/install
 	$(INSTALL_DIR) $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/{hbbr,hbbs} $(1)/usr/bin/
-	$(INSTALL_DIR) $(1)/etc/config $(1)/etc/init.d/
-	$(INSTALL_BIN) ./files/rustdesk-server.conf $(1)/etc/config/rustdesk-server
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_CONF) ./files/rustdesk-server.conf $(1)/etc/config/rustdesk-server
+	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/rustdesk-server.init $(1)/etc/init.d/rustdesk-server
 endef
 
