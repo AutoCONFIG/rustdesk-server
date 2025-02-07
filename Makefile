@@ -12,6 +12,8 @@ PKG_SOURCE:=rustdesk-server-linux-arm64v8.zip
 PKG_SOURCE_URL:=https://github.com/rustdesk/rustdesk-server/releases/download/$(PKG_VERSION)
 PKG_HASH:=d19fdb711621ad96e794ebc7899dc80d6829c9ae871483df520fb78a48c2d7ac
 
+PKG_BUILD_DIR=$(BUILD_DIR)/arm64v8/
+
 PKG_MAINTAINER:=Yun Wang <maoerpet@foxmail.com>
 PKG_LICENSE:=AGPL-3.0-only
 PKG_LICENSE_FILES:=LICENSE
@@ -31,6 +33,9 @@ define Package/rustdesk-server/description
   Self-host your own RustDesk server, it is free and open source.
 endef
 
+define Build/Compile
+endef
+
 define Package/rustdesk-server/conffiles
 /etc/config/rustdesk-server
 /etc/rustdesk-server
@@ -38,7 +43,7 @@ endef
 
 define Package/rustdesk-server/install
 	$(INSTALL_DIR) $(1)/usr/bin/
-	$(CP) $(PKG_BUILD_DIR)/arm64v8/{hbbr,hbbs} $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/{hbbr,hbbs} $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/rustdesk-server.conf $(1)/etc/config/rustdesk-server
 	$(INSTALL_DIR) $(1)/etc/init.d
