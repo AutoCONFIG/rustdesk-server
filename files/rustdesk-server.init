@@ -33,8 +33,6 @@ start_service() {
 		procd_set_param stdout 1
 		procd_set_param stderr 1
 		procd_set_param respawn
-		procd_set_param user rustdesk-server
-		procd_set_param group rustdesk-server
 
 		if [ "$auto_fw" -eq "1" ]; then
 			if [ "$web_client" -eq "0" ]; then
@@ -65,8 +63,6 @@ start_service() {
 		procd_set_param stdout 1
 		procd_set_param stderr 1
 		procd_set_param respawn
-		procd_set_param user rustdesk-server
-		procd_set_param group rustdesk-server
 
 		if [ "$auto_fw" -eq "1" ]; then
 			if [ "$web_client" -eq "0" ]; then
