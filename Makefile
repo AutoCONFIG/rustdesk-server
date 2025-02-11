@@ -26,6 +26,7 @@ define Package/rustdesk-server
   TITLE:=RustDesk Server Program
   DEPENDS:=@(aarch64)
   URL:=https://rustdesk.com/server
+  USERID:=rustdesk-server:rustdesk-server
 endef
 
 define Package/rustdesk-server/description
