@@ -4,6 +4,7 @@ USE_PROCD=1
 START=99
 
 CONF="rustdesk-server"
+RUNDIR="/var/run/rustdesk-server"
 WORKDIR="/etc/rustdesk-server"
 
 start_service() {
@@ -21,10 +22,16 @@ start_service() {
 
 	[ "$hbbr_enabled" -eq "1" ] || [ "$hbbs_enabled" -eq "1" ] || return 1
 
+	if [ ! -d "$RUNDIR" ] && ! mkdir -p "$RUNDIR"; then
+		logger -p daemon.error -t "rustdesk-server" "Failed to create working directory: $WORKDIR"
+		return 1
+	fi
+	chown -R rustdesk-server:rustdesk-server "$RUNDIR"
 	if [ ! -d "$WORKDIR" ] && ! mkdir -p "$WORKDIR"; then
 		logger -p daemon.error -t "rustdesk-server" "Failed to create working directory: $WORKDIR"
 		return 1
 	fi
+	chown -R rustdesk-server:rustdesk-server "$WORKDIR"
 
 	if [ "$hbbr_enabled" -eq "1" ]; then
 		procd_open_instance "hbbr"
@@ -34,8 +41,8 @@ start_service() {
 		procd_set_param stdout 1
 		procd_set_param stderr 1
 		procd_set_param respawn
-
-		procd_set_param env HOME="$WORKDIR"
+		procd_set_param user rustdesk-server
+		procd_set_param group rustdesk-server
 
 		if [ "$auto_fw" -eq "1" ]; then
 			if [ "$web_client" -eq "0" ]; then
@@ -68,8 +75,8 @@ start_service() {
 		procd_set_param stdout 1
 		procd_set_param stderr 1
 		procd_set_param respawn
-
-		procd_set_param env HOME="$WORKDIR"
+		procd_set_param user rustdesk-server
+		procd_set_param group rustdesk-server
 
 		if [ "$auto_fw" -eq "1" ]; then
 			if [ "$web_client" -eq "0" ]; then

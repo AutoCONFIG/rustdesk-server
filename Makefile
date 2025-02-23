@@ -29,6 +29,7 @@ define Package/rustdesk-server
   TITLE:=RustDesk Server Program
   DEPENDS:=@(aarch64||arm||x86_64) @(!arm||TARGET_bcm53xx||HAS_FPU)
   URL:=https://rustdesk.com/server
+  USERID:=rustdesk-server:rustdesk-server
 endef
 
 define Package/rustdesk-server/description
