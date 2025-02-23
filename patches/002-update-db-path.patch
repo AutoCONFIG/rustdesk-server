@@ -1,6 +1,6 @@
 --- a/src/peer.rs
 +++ b/src/peer.rs
-@@ -68,7 +68,7 @@ pub(crate) struct PeerMap {
+@@ -68,17 +68,13 @@ pub(crate) struct PeerMap {
  impl PeerMap {
      pub(crate) async fn new() -> ResultType<Self> {
          let db = std::env::var("DB_URL").unwrap_or({
@@ -9,3 +9,13 @@
              #[cfg(all(windows, not(debug_assertions)))]
              {
                  if let Some(path) = hbb_common::config::Config::icon_path().parent() {
+                     db = format!("{}\\{}", path.to_str().unwrap_or("."), db);
+                 }
+             }
+-            #[cfg(not(windows))]
+-            {
+-                db = format!("./{db}");
+-            }
+             db
+         });
+         log::info!("DB_URL={}", db);
