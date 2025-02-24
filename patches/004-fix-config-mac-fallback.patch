@@ -1,6 +1,6 @@
---- a/src/config.rs
-+++ b/src/config.rs
-@@ -799,7 +799,12 @@ impl Config {
+--- a/libs/hbb_common/src/config.rs
++++ b/libs/hbb_common/src/config.rs
+@@ -806,7 +806,12 @@ impl Config {
                  id &= 0x1FFFFFFF;
                  Some(id.to_string())
              } else {
@@ -10,7 +10,7 @@
 +                    rand::thread_rng()
 +                        .gen_range(1_000_000_000..2_000_000_000)
 +                        .to_string(),
-+                );
++                )
              }
          }
      }
