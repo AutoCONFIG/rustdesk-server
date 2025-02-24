@@ -54,7 +54,12 @@
      }
  
      pub fn path<P: AsRef<Path>>(p: P) -> PathBuf {
-@@ -633,14 +595,9 @@ impl Config {
+@@ -628,19 +590,12 @@ impl Config {
+         }
+         #[cfg(not(any(target_os = "android", target_os = "ios")))]
+         {
+-            #[cfg(not(target_os = "macos"))]
+-            let org = "".to_owned();
              #[cfg(target_os = "macos")]
              let org = ORG.read().unwrap().clone();
              // /var/root for root
