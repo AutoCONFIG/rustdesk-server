@@ -25,7 +25,7 @@
 +        .log_to_file(
 +            FileSpec::default()
 +                .directory("/var/run/rustdesk-server")
-+                .basename("hbbr")
++                .basename("hbbs")
 +                .suffix("log")
 +                .suppress_timestamp()
 +        )
