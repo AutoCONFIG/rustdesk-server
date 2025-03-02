@@ -35,6 +35,11 @@ start_service() {
 		procd_set_param command /usr/bin/hbbr
 		procd_append_param command -p "${hbbr_port}"
 
+		procd_add_jail hbbr log procfs sysfs
+		procd_add_jail_mount "/etc/ssl/"
+		procd_add_jail_mount_rw "/etc/rustdesk-server/"
+		procd_add_jail_mount_rw "/var/run/rustdesk-server/"
+
 		procd_set_param respawn
 		procd_set_param user rustdesk-server
 		procd_set_param group rustdesk-server
@@ -66,6 +71,11 @@ start_service() {
 		procd_open_instance "hbbs"
 		procd_set_param command /usr/bin/hbbs
 		procd_append_param command -p "${hbbs_port}"
+
+		procd_add_jail hbbs log procfs sysfs
+		procd_add_jail_mount "/etc/ssl/"
+		procd_add_jail_mount_rw "/etc/rustdesk-server/"
+		procd_add_jail_mount_rw "/var/run/rustdesk-server/"
 
 		procd_set_param respawn
 		procd_set_param user rustdesk-server
@@ -107,6 +117,10 @@ start_service() {
 
 service_started() {
 	procd_set_config_changed firewall
+}
+
+stop_service() {
+	rm -f "/var/run/rustdesk-server/hbbr.log" "/var/run/rustdesk-server/hbbs.log"
 }
 
 service_stopped() {
