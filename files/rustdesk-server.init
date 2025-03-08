@@ -122,7 +122,7 @@ service_started() {
 }
 
 stop_service() {
-	rm -f /var/run/rustdesk-server/hbbr*.log /var/run/rustdesk-server/hbbs*.log
+	rm -f "$RUNDIR"/hbbr*.log "$RUNDIR"/hbbs*.log
 }
 
 service_stopped() {
