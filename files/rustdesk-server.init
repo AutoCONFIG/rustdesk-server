@@ -42,13 +42,14 @@ start_service() {
 		procd_open_instance "hbbr"
 		procd_set_param command /usr/bin/hbbr
 
-		procd_set_param env DOWNGRADE_START_CHECK="$hbbr_downgrade_start_check" \
-							DOWNGRADE_THRESHOLD="$hbbr_downgrade_threshold" \
-							KEY="$global_key" \
-							LIMIT_SPEED="$hbbr_limit_speed" \
-							PORT="$global_port" \
-							SINGLE_BANDWIDTH="$hbbr_single_bandwidth" \
-							TOTAL_BANDWIDTH="$hbbr_total_bandwidth"
+		procd_set_param env \
+			DOWNGRADE_START_CHECK="$hbbr_downgrade_start_check" \
+			DOWNGRADE_THRESHOLD="$hbbr_downgrade_threshold" \
+			KEY="$global_key" \
+			LIMIT_SPEED="$hbbr_limit_speed" \
+			PORT="$global_port" \
+			SINGLE_BANDWIDTH="$hbbr_single_bandwidth" \
+			TOTAL_BANDWIDTH="$hbbr_total_bandwidth"
 
 		procd_add_jail hbbr log procfs sysfs
 		procd_add_jail_mount "/etc/ssl/"
@@ -82,9 +83,10 @@ start_service() {
 		procd_open_instance "hbbs"
 		procd_set_param command /usr/bin/hbbs
 
-		procd_set_param env ALWAYS_USE_RELAY="$hbbs_always_use_relay" \
-							KEY="$global_key" \
-							PORT="$global_port"
+		procd_set_param env \
+			ALWAYS_USE_RELAY="$hbbs_always_use_relay" \
+			KEY="$global_key" \
+			PORT="$global_port"
 		
 		procd_add_jail hbbs log procfs sysfs
 		procd_add_jail_mount "/etc/ssl/"
