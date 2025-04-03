@@ -15,18 +15,18 @@ start_service() {
 
 	config_load "$CONF"
 	config_get_bool auto_fw "global" "auto_fw" "0"
-	config_get global_key "global" "key" "_"
+	config_get global_key "global" "key" ""
 	config_get global_port "global" "port" "21116"
 
 	config_get_bool hbbr_enabled "hbbr" "enabled" "0"
-	config_get hbbr_downgrade_start_check "hbbr" "downgrade_start_check" "1800"
-	config_get hbbr_downgrade_threshold "hbbr" "downgrade_threshold" "0.66"
-	config_get hbbr_limit_speed "hbbr" "limit_speed" "4"
-	config_get hbbr_total_bandwidth "hbbr" "total_bandwidth" "1024"
-	config_get hbbr_single_bandwidth "hbbr" "single_bandwidth" "16"
+	config_get hbbr_downgrade_start_check "hbbr" "downgrade_start_check" ""
+	config_get hbbr_downgrade_threshold "hbbr" "downgrade_threshold" ""
+	config_get hbbr_limit_speed "hbbr" "limit_speed" ""
+	config_get hbbr_total_bandwidth "hbbr" "total_bandwidth" ""
+	config_get hbbr_single_bandwidth "hbbr" "single_bandwidth" ""
 
 	config_get_bool hbbs_enabled "hbbs" "enabled" "0"
-	config_get hbbs_always_use_relay "hbbs" "always_use_relay" "N"
+	config_get hbbs_always_use_relay "hbbs" "always_use_relay" ""
 
 	[ "$hbbr_enabled" -eq "1" ] || [ "$hbbs_enabled" -eq "1" ] || return 1
 
@@ -69,7 +69,7 @@ start_service() {
 				json_add_string type rule
 				json_add_string name "Allow-rustdesk-relay-tcp"
 				json_add_string proto "tcp"
-				json_add_string src "wan"
+				json_add_string src "*"
 				json_add_string dest_port "$hbbr_tcp_ports"
 				json_add_string target "ACCEPT"
 				json_close_object
@@ -107,7 +107,7 @@ start_service() {
 				json_add_string type rule
 				json_add_string name "Allow-rustdesk-server-tcp"
 				json_add_string proto "tcp"
-				json_add_string src "wan"
+				json_add_string src "*"
 				json_add_string dest_port "$hbbs_tcp_ports"
 				json_add_string target "ACCEPT"
 				json_close_object
@@ -116,7 +116,7 @@ start_service() {
 				json_add_string type rule
 				json_add_string name "Allow-rustdesk-server-udp"
 				json_add_string proto "udp"
-				json_add_string src "wan"
+				json_add_string src "*"
 				json_add_string dest_port "$hbbs_udp_ports"
 				json_add_string target "ACCEPT"
 				json_close_object
