@@ -61,7 +61,7 @@ start_service() {
 		procd_set_param group rustdesk-server
 
 		if [ "$auto_fw" -eq "1" ]; then
-			hbbr_tcp_ports="$(( global_port + 1 ))" # 21117
+			hbbr_tcp_ports="$(( global_port + 1 ))"
 
 			procd_open_data
 			json_add_array firewall
@@ -98,8 +98,8 @@ start_service() {
 		procd_set_param group rustdesk-server
 
 		if [ "$auto_fw" -eq "1" ]; then
-			hbbs_tcp_ports="$(( global_port - 1 )) $global_port" # 21115 21116
-			hbbs_udp_ports="$global_port" # 21116
+			hbbs_tcp_ports="$(( global_port - 1 )) $global_port"
+			hbbs_udp_ports="$global_port"
 
 			procd_open_data
 			json_add_array firewall
